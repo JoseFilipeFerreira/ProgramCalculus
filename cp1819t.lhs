@@ -113,13 +113,13 @@
 
 \begin{center}\large
 \begin{tabular}{ll}
-\textbf{Grupo} nr. & 99 (preencher)
+\textbf{Grupo} nr. & 10 (preencher)
 \\\hline
-a11111 & Nome1 (preencher)	
+a85504 & João Teixeira	
 \\
-a22222 & Nome2 (preencher)	
+a84776 & Emanuel Rodrigues	
 \\
-a33333 & Nome3 (preencher)	
+a83683 & José Ferreira
 \end{tabular}
 \end{center}
 
