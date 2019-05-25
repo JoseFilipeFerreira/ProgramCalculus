@@ -1127,17 +1127,33 @@ outras funções auxiliares que sejam necessárias.
 \begin{code}
 
 inExpr :: Either Int (Op,(Expr,Expr)) -> Expr
-inExpr = undefined
+inExpr = either Num (uncurry(uncurry Bop) . (swap >< id) . assocl . id)
 
 outExpr :: Expr -> Either Int (Op,(Expr,Expr))
-outExpr = undefined
+outExpr (Num a) = i1 a
+outExpr (Bop e1 o1 e2) = i2 (o1,(e1,e2))
 
-recExpr f = undefined
+recExpr f = baseExpr id f
 
-cataExpr g = undefined
+cataExpr g = g . (recExpr(cataExpr g)) . outExpr
+
+anaExpr f = inExpr . (recExpr (anaExpr f)) . f
+
+hyloExpr a c = cataExpr a . anaExpr c
 
 calcula :: Expr -> Int
-calcula = undefined
+calcula e = cataExpr (either id asd) e
+
+-- mudar
+asd :: Num a => (Op,(a,a)) -> a
+asd (Op"+",(a,b)) = (+) a b
+asd (Op"-",(a,b)) = (-) a b
+asd (Op"*",(a,b)) = (*) a b
+
+showOp :: [(Op,String)] -> String
+showOp x = undefined
+
+showNum x = undefined
 
 show' = undefined
 
@@ -1149,16 +1165,19 @@ compile = undefined
 
 \begin{code}
 inL2D :: Either a (b, (X a b,X a b)) -> X a b
-inL2D = undefined
+inL2D = either Unid undefined
 
 outL2D :: X a b -> Either a (b, (X a b,X a b))
-outL2D = undefined
+outL2D (Unid a) = i1 a
+outL2D (Comp a f g) = i2 (a, (f,g))
 
-recL2D f = undefined
+baseL2D f g h i = f -|- ( g >< (h >< i))
 
-cataL2D g = undefined
+recL2D f = baseL2D id id id f
 
-anaL2D g = undefined
+cataL2D g = g . (recL2D(cataL2D g)) . outL2D
+
+anaL2D g = inL2D . (recL2D (anaL2D g)) . g
 
 collectLeafs = undefined
 
@@ -1178,27 +1197,46 @@ caixasAndOrigin2Pict = undefined
 Solução:
 \begin{code}
 cos' x = prj . for loop init where
-   loop = undefined
-   init = undefined
-   prj = undefined
+   loop (e,h,s,g) = (h + e,-(x^2) / (s * g) * h, 2 + s, 2 + g)
+   init = (1,-(x^2)/2,4,3)
+   prj (e,h,s,g) = e
 \end{code}
 
 \subsection*{Problema 4}
 Triologia ``ana-cata-hilo":
 \begin{code}
-outFS (FS l) = undefined
-outNode = undefined
+outFS (FS l) = map (id >< outNode) l
+outNode (File b) = i1 b
+outNode (Dir fs) = i2 fs
 
-baseFS f g h = undefined
+baseFS f g h = map (f >< (g -|- h))
 
 cataFS :: ([(a, Either b c)] -> c) -> FS a b -> c
-cataFS g = undefined
+cataFS g = g . (recFS(cataFS g)) . outFS
 
 anaFS :: (c -> [(a, Either b c)]) -> c -> FS a b
-anaFS g = undefined
+anaFS g = inFS . (recFS (anaFS g)) . g
 
-hyloFS g h = undefined
+hyloFS g h = cataFS g . anaFS h
 \end{code}
+
+--meter tipos direitos
+\begin{eqnarray*}
+\xymatrix@@C=2cm{
+    |Nat0|
+           \ar[d]_-{|cataFS g|}
+&
+    |1 + Nat0|
+           \ar[d]^{|id x (id + (cataFS g))|}
+           \ar[l]_-{|inFS|}
+\\
+     |B|
+&
+     |1 + B|
+           \ar[l]^-{|g|}
+}
+\end{eqnarray*}
+
 Outras funções pedidas:
 \begin{code}
 check :: (Eq a) => FS a b -> Bool
