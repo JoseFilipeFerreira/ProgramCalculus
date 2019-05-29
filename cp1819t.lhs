@@ -191,7 +191,6 @@ import qualified Graphics.Gloss as G
 import Control.Monad
 import Control.Applicative hiding ((<|>))
 import Data.Either
-import System.IO.Unsafe
 import Exp
 \end{code}
 %endif
@@ -1143,37 +1142,22 @@ anaExpr f = inExpr . (recExpr (anaExpr f)) . f
 hyloExpr a c = cataExpr a . anaExpr c
 
 calcula :: Expr -> Int
-calcula e = cataExpr (either id asd) e
+calcula e = cataExpr (either id calcBop) e
 
--- mudar
-asd :: Num a => (Op,(a,a)) -> a
-asd (Op"+",(a,b)) = (+) a b
-asd (Op"-",(a,b)) = (-) a b
-asd (Op"*",(a,b)) = (*) a b
+calcBop (Op"+",(a,b)) = (+) a b
+calcBop (Op"-",(a,b)) = (-) a b
+calcBop (Op"*",(a,b)) = (*) a b
 
-showOp :: [(Op,String)] -> String
-showOp = head . map(\((Op a), b) -> a++b)
-
-showNumA = head . map(\((Num a), x) -> show a ++ x)
-
-showNum a | a < 0 = "(" ++ show a ++ ")"
-          | otherwise = show a  
-
-show' = cataExpr (either showNum r)
-    where r (Op a, (b, c)) = "(" ++ b ++ a ++ c ++ ")"
-
+show' = cataExpr (either show showBop)
+    where showBop (Op c,(a,b)) = "(" ++  a ++ " " ++ c ++ " " ++ b ++ ")"
+ 
 compile :: String -> Codigo
-compile =  cataExpr g . read
-    where
-        g :: Either Int (Op, ([String], [String])) -> [String]
-        g (Left n) =  ["PUSH " ++ show n]
-        g (Right (op, (l, r))) = l ++ r ++ stackOp op
+compile = cataExpr (either pushN stackBop) . read
+    where pushN x = (singl ("PUSH " ++ show x))
 
-stackOp :: Op -> [String]
-stackOp (Op "+") = ["ADD"]
-stackOp (Op "/") = ["DIV"]
-stackOp (Op "*") = ["MUL"]
-stackOp (Op "-") = ["SUB"]
+stackBop (Op"+",(a,b)) = a ++ b ++ ["ADD"]
+stackBop (Op"-",(a,b)) = a ++ b ++ ["SUB"]
+stackBop (Op"*",(a,b)) = a ++ b ++ ["MUL"]
 
 \end{code}
 
