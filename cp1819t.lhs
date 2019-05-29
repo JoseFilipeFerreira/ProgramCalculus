@@ -191,6 +191,7 @@ import qualified Graphics.Gloss as G
 import Control.Monad
 import Control.Applicative hiding ((<|>))
 import Data.Either
+import System.IO.Unsafe
 import Exp
 \end{code}
 %endif
@@ -1151,11 +1152,15 @@ asd (Op"-",(a,b)) = (-) a b
 asd (Op"*",(a,b)) = (*) a b
 
 showOp :: [(Op,String)] -> String
-showOp x = undefined
+showOp = head . map(\((Op a), b) -> a++b)
 
-showNum x = undefined
+showNumA = head . map(\((Num a), x) -> show a ++ x)
 
-show' = undefined
+showNum a | a < 0 = "(" ++ show a ++ ")"
+          | otherwise = show a  
+
+show' = cataExpr (either showNum r)
+    where r (Op a, (b, c)) = "(" ++ b ++ a ++ c ++ ")"
 
 compile :: String -> Codigo
 compile = undefined 
