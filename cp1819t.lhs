@@ -1158,7 +1158,18 @@ showNum x = undefined
 show' = undefined
 
 compile :: String -> Codigo
-compile = undefined 
+compile =  cataExpr g . read
+    where
+        g :: Either Int (Op, ([String], [String])) -> [String]
+        g (Left n) =  ["PUSH " ++ show n]
+        g (Right (op, (l, r))) = l ++ r ++ stackOp op
+
+stackOp :: Op -> [String]
+stackOp (Op "+") = ["ADD"]
+stackOp (Op "/") = ["DIV"]
+stackOp (Op "*") = ["MUL"]
+stackOp (Op "-") = ["SUB"]
+
 \end{code}
 
 \subsection*{Problema 2}
@@ -1188,7 +1199,12 @@ calcOrigins :: ((X Caixa Tipo),Origem) -> X (Caixa,Origem) ()
 calcOrigins = undefined
 
 calc :: Tipo -> Origem -> (Float, Float) -> Origem
-calc = undefined 
+calc V  (ox, oy) (sx, sy) = undefined 
+calc Vd (ox, oy) (sx, sy) = undefined 
+calc Ve (ox, oy) (sx, sy) = undefined 
+calc H  (ox, oy) (sx, sy) = undefined 
+calc Ht (ox, oy) (sx, sy) = undefined 
+calc Hb (ox, oy) (sx, sy) = undefined 
 
 caixasAndOrigin2Pict = undefined
 \end{code}
