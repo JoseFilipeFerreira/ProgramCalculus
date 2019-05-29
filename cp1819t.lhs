@@ -1149,7 +1149,7 @@ calcBop (Op"-",(a,b)) = (-) a b
 calcBop (Op"*",(a,b)) = (*) a b
 
 show' = cataExpr (either show showBop)
-    where = showBop (Op c,(a,b)) = "(" ++  a ++ " " ++ c ++ " " ++ b ++ ")"
+    where showBop (Op c,(a,b)) = "(" ++  a ++ " " ++ c ++ " " ++ b ++ ")"
  
 compile :: String -> Codigo
 compile = cataExpr (either pushN stackBop) . read
