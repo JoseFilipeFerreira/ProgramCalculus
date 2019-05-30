@@ -1286,15 +1286,15 @@ check = cataFS a
 
 tar :: FS a b -> [(Path a, b)]
 tar = cataFS x
-    where x = concat . map (\(a,b) -> either (\x -> [([a], x)]) (map (\(x,y) -> ((a:x), y))) b)
+    where x = concatMap (\(a,b) -> either (\x -> [([a], x)]) (map (\(x,y) -> ((a:x), y))) b)
 
 untar :: (Eq a) => [(Path a, b)] -> FS a b
 untar = anaFS x
     where x = map (\(a,(b,c)) -> if (null b) then (a, (Left c)) else (a, Right [(b,c)])) . map (\(a,b) -> (head a, (tail a, b)))
 
 find :: (Eq a) => a -> FS a b -> [Path a]
-find a = cataFS undefined 
-    where x o = concatMap (\(a,b) -> if (a == o) then either (const [a]) (map (flip (:) a)) b else either (const []) (map(flip (:) a)) b)
+find a = cataFS (x a) 
+    where x o = concatMap (\(a,b) -> if (a == o) then either (const [[a]]) (map ((:) a)) b else either (const []) (map((:) a)) b)
 
 new :: (Eq a) => Path a -> b -> FS a b -> FS a b
 new = undefined
