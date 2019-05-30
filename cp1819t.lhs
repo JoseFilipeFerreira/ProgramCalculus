@@ -1142,33 +1142,22 @@ anaExpr f = inExpr . (recExpr (anaExpr f)) . f
 hyloExpr a c = cataExpr a . anaExpr c
 
 calcula :: Expr -> Int
-calcula e = cataExpr (either id asd) e
+calcula e = cataExpr (either id calcBop) e
 
--- mudar
-asd :: Num a => (Op,(a,a)) -> a
-asd (Op"+",(a,b)) = (+) a b
-asd (Op"-",(a,b)) = (-) a b
-asd (Op"*",(a,b)) = (*) a b
+calcBop (Op"+",(a,b)) = (+) a b
+calcBop (Op"-",(a,b)) = (-) a b
+calcBop (Op"*",(a,b)) = (*) a b
 
-showOp :: [(Op,String)] -> String
-showOp x = undefined
-
-showNum x = undefined
-
-show' = undefined
-
+show' = cataExpr (either show showBop)
+    where showBop (Op c,(a,b)) = "(" ++  a ++ " " ++ c ++ " " ++ b ++ ")"
+ 
 compile :: String -> Codigo
-compile =  cataExpr g . read
-    where
-        g :: Either Int (Op, ([String], [String])) -> [String]
-        g (Left n) =  ["PUSH " ++ show n]
-        g (Right (op, (l, r))) = l ++ r ++ stackOp op
+compile = cataExpr (either pushN stackBop) . read
+    where pushN x = (singl ("PUSH " ++ show x))
 
-stackOp :: Op -> [String]
-stackOp (Op "+") = ["ADD"]
-stackOp (Op "/") = ["DIV"]
-stackOp (Op "*") = ["MUL"]
-stackOp (Op "-") = ["SUB"]
+stackBop (Op"+",(a,b)) = a ++ b ++ ["ADD"]
+stackBop (Op"-",(a,b)) = a ++ b ++ ["SUB"]
+stackBop (Op"*",(a,b)) = a ++ b ++ ["MUL"]
 
 \end{code}
 
@@ -1219,12 +1208,12 @@ calcOrigins = anaL2D collectLeafs
         
 
 calc :: Tipo -> Origem -> (Float, Float) -> Origem
-calc V  (ox, oy) (sx, sy) = (ox + sx/2, oy + sy  ) --done 
-calc Vd (ox, oy) (sx, sy) = (ox + oy  , oy + sy  )
-calc Ve (ox, oy) (sx, sy) = (ox       , oy + sy  ) --done
-calc H  (ox, oy) (sx, sy) = (ox + sx  , oy + sy/2) --done
-calc Ht (ox, oy) (sx, sy) = (ox + sx  , oy + sy   )
-calc Hb (ox, oy) (sx, sy) = (ox + sx  , oy       ) --done
+calc V  (ox, oy) (sx, sy) = (ox + sx/2, oy + sy  )
+calc Vd (ox, oy) (sx, sy) = (ox + oy  , oy + sy  ) --TODO
+calc Ve (ox, oy) (sx, sy) = (ox       , oy + sy  )
+calc H  (ox, oy) (sx, sy) = (ox + sx  , oy + sy/2)
+calc Ht (ox, oy) (sx, sy) = (ox + sx  , oy + sy   ) --TODO
+calc Hb (ox, oy) (sx, sy) = (ox + sx  , oy       )
 
 agrup_caixas :: X (Caixa,Origem) () -> Fig
 agrup_caixas = cataL2D g
@@ -1242,7 +1231,6 @@ caixasAndOrigin2Pict = G.Pictures . (map  figToPic) . agrup_caixas . calcOrigins
     
 mostra_caixas :: (L2D, Origem) -> IO()
 mostra_caixas = display . caixasAndOrigin2Pict
-
 
 \end{code}
 
