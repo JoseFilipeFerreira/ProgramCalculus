@@ -1281,16 +1281,20 @@ hyloFS g h = cataFS g . anaFS h
 Outras funções pedidas:
 \begin{code}
 check :: (Eq a) => FS a b -> Bool
-check = undefined
+check = cataFS a
+        where a b = (length b == (length $ nub $ map (p1) $ b)) && ((length $ filter ((either (const True) id) . p2) b) == 0)
 
 tar :: FS a b -> [(Path a, b)]
-tar = undefined
+tar = cataFS x
+    where x = concat . map (\(a,b) -> either (\x -> [([a], x)]) (map (\(x,y) -> ((a:x), y))) b)
 
 untar :: (Eq a) => [(Path a, b)] -> FS a b
-untar = undefined
+untar = anaFS x
+    where x = map (\(a,(b,c)) -> if (null b) then (a, (Left c)) else (a, Right [(b,c)])) . map (\(a,b) -> (head a, (tail a, b)))
 
 find :: (Eq a) => a -> FS a b -> [Path a]
-find = undefined
+find a = cataFS undefined 
+    where x o = concatMap (\(a,b) -> if (a == o) then either (const [a]) (map (flip (:) a)) b else either (const []) (map(flip (:) a)) b)
 
 new :: (Eq a) => Path a -> b -> FS a b -> FS a b
 new = undefined
