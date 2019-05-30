@@ -1297,13 +1297,13 @@ find a = cataFS (x a)
     where x o = concatMap (\(a,b) -> if (a == o) then either (const [[a]]) (map ((:) a)) b else either (const []) (map((:) a)) b)
 
 new :: (Eq a) => Path a -> b -> FS a b -> FS a b
-new = undefined
+new a b c = untar ((a,b) : tar c)
 
 cp :: (Eq a) => Path a -> Path a -> FS a b -> FS a b
 cp = undefined
 
 rm :: (Eq a) => (Path a) -> (FS a b) -> FS a b
-rm = undefined
+rm a b = untar $ filter (not . (==) a . p1) $ tar b
 
 auxJoin :: ([(a, Either b c)],d) -> [(a, Either b (d,c))]
 auxJoin = undefined
