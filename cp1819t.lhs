@@ -1165,7 +1165,10 @@ stackBop (Op"*",(a,b)) = a ++ b ++ ["MUL"]
 
 \begin{code}
 inL2D :: Either a (b, (X a b,X a b)) -> X a b
-inL2D = either Unid undefined
+inL2D = either Unid comp
+
+comp :: (b, (X a b, X a b)) -> X a b
+comp (b, (l, r)) = Comp b l r
 
 outL2D :: X a b -> Either a (b, (X a b,X a b))
 outL2D (Unid a) = i1 a
@@ -1173,29 +1176,62 @@ outL2D (Comp a f g) = i2 (a, (f,g))
 
 baseL2D f g h i = f -|- ( g >< (h >< i))
 
-recL2D f = baseL2D id id id f
+recL2D f = baseL2D id id f f
 
 cataL2D g = g . (recL2D(cataL2D g)) . outL2D
 
 anaL2D g = inL2D . (recL2D (anaL2D g)) . g
 
-collectLeafs = undefined
+collectLeafs :: (L2D, Origem) -> Either (Caixa, Origem) ((), ((L2D, Origem),(L2D, Origem)))
+collectLeafs ((Unid c), o)     = Left (c, o)
+collectLeafs ((Comp t l r), o) = Right ((), ((l, o), (r, ro)))
+    where
+        ro = calc t o $ dimen l
 
-dimen :: X Caixa Tipo -> (Float, Float)
-dimen = undefined
+dimen :: L2D -> (Float, Float)
+dimen = cataL2D g
+    where
+        g :: Either Caixa (Tipo, ((Float, Float), (Float, Float))) -> (Float, Float)
+        g (Left  (s, _)) = (fromIntegral >< fromIntegral) s
+        g (Right (t, ((x1, y1), (x2, y2)))) | isVert t  = (max x1 x2, y1 + y2)
+                                            | otherwise = (x1 + x2  , max y1 y2)
 
-calcOrigins :: ((X Caixa Tipo),Origem) -> X (Caixa,Origem) ()
-calcOrigins = undefined
+isVert :: Tipo -> Bool
+isVert V  = True
+isVert Ve = True
+isVert Vd = True
+isVert _ = False
+
+
+calcOrigins :: (L2D, Origem) -> X (Caixa,Origem) ()
+calcOrigins = anaL2D collectLeafs
+        
 
 calc :: Tipo -> Origem -> (Float, Float) -> Origem
-calc V  (ox, oy) (sx, sy) = undefined 
-calc Vd (ox, oy) (sx, sy) = undefined 
-calc Ve (ox, oy) (sx, sy) = undefined 
-calc H  (ox, oy) (sx, sy) = undefined 
-calc Ht (ox, oy) (sx, sy) = undefined 
-calc Hb (ox, oy) (sx, sy) = undefined 
+calc V  (ox, oy) (sx, sy) = (ox + sx/2, oy + sy  )
+calc Vd (ox, oy) (sx, sy) = (ox + oy  , oy + sy  ) --TODO
+calc Ve (ox, oy) (sx, sy) = (ox       , oy + sy  )
+calc H  (ox, oy) (sx, sy) = (ox + sx  , oy + sy/2)
+calc Ht (ox, oy) (sx, sy) = (ox + sx  , oy + sy   ) --TODO
+calc Hb (ox, oy) (sx, sy) = (ox + sx  , oy       )
 
-caixasAndOrigin2Pict = undefined
+agrup_caixas :: X (Caixa,Origem) () -> Fig
+agrup_caixas = cataL2D g
+    where
+        g :: Either (Caixa, Origem) ((), (Fig, Fig)) -> Fig
+        g (Left  (c, o)) = [(o, c)]
+        g (Right (_ , (f1, f2))) = f1 ++ f2
+
+caixasAndOrigin2Pict :: (L2D, Origem) -> G.Picture
+caixasAndOrigin2Pict = G.Pictures . (map  figToPic) . agrup_caixas . calcOrigins
+    where
+        figToPic :: (Origem, Caixa) -> G.Picture
+        figToPic (o, ((sx, sy), (s, c))) = crCaixa o (fromIntegral sx) (fromIntegral sy) s c 
+
+    
+mostra_caixas :: (L2D, Origem) -> IO()
+mostra_caixas = display . caixasAndOrigin2Pict
+
 \end{code}
 
 \subsection*{Problema 3}
