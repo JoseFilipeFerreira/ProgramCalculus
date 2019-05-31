@@ -1281,25 +1281,29 @@ hyloFS g h = cataFS g . anaFS h
 Outras funções pedidas:
 \begin{code}
 check :: (Eq a) => FS a b -> Bool
-check = undefined
+check = cataFS a
+        where a b = (length b == (length $ nub $ map (p1) $ b)) && ((length $ filter ((either (const True) id) . p2) b) == 0)
 
 tar :: FS a b -> [(Path a, b)]
-tar = undefined
+tar = cataFS x
+    where x = concatMap (\(a,b) -> either (\x -> [([a], x)]) (map (\(x,y) -> ((a:x), y))) b)
 
 untar :: (Eq a) => [(Path a, b)] -> FS a b
-untar = undefined
+untar = anaFS x
+    where x = map (\(a,(b,c)) -> if (null b) then (a, (Left c)) else (a, Right [(b,c)])) . map (\(a,b) -> (head a, (tail a, b)))
 
 find :: (Eq a) => a -> FS a b -> [Path a]
-find = undefined
+find o = cataFS f
+    where f = concatMap (\(a,b) -> if (a == o) then either (const [[a]]) (map ((:) a)) b else either (const []) (map((:) a)) b)
 
 new :: (Eq a) => Path a -> b -> FS a b -> FS a b
-new = undefined
+new a b c = untar ((a,b) : tar c)
 
 cp :: (Eq a) => Path a -> Path a -> FS a b -> FS a b
 cp = undefined
 
 rm :: (Eq a) => (Path a) -> (FS a b) -> FS a b
-rm = undefined
+rm a b = untar $ filter (not . (==) a . p1) $ tar b
 
 auxJoin :: ([(a, Either b c)],d) -> [(a, Either b (d,c))]
 auxJoin = undefined
