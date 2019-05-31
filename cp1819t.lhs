@@ -1293,8 +1293,8 @@ untar = anaFS x
     where x = map (\(a,(b,c)) -> if (null b) then (a, (Left c)) else (a, Right [(b,c)])) . map (\(a,b) -> (head a, (tail a, b)))
 
 find :: (Eq a) => a -> FS a b -> [Path a]
-find a = cataFS (x a) 
-    where x o = concatMap (\(a,b) -> if (a == o) then either (const [[a]]) (map ((:) a)) b else either (const []) (map((:) a)) b)
+find o = cataFS f
+    where f = concatMap (\(a,b) -> if (a == o) then either (const [[a]]) (map ((:) a)) b else either (const []) (map((:) a)) b)
 
 new :: (Eq a) => Path a -> b -> FS a b -> FS a b
 new a b c = untar ((a,b) : tar c)
