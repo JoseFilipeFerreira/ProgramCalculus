@@ -1166,14 +1166,20 @@ stackBop (Op"*",(a,b)) = a ++ b ++ ["MUL"]
 \begin{code}
 inL2D :: Either a (b, (X a b,X a b)) -> X a b
 inL2D = either Unid comp
+
 comp :: (b, (X a b, X a b)) -> X a b
 comp (b, (l, r)) = Comp b l r
+
 outL2D :: X a b -> Either a (b, (X a b,X a b))
 outL2D (Unid a) = i1 a
 outL2D (Comp a f g) = i2 (a, (f,g))
+
 baseL2D f g h i = f -|- ( g >< (h >< i))
+
 recL2D f = baseL2D id id f f
+
 cataL2D g = g . (recL2D(cataL2D g)) . outL2D
+
 anaL2D g = inL2D . (recL2D (anaL2D g)) . g
 \end{code}
 
@@ -1229,6 +1235,11 @@ calc Hb (ox, oy) (sx, sy) = (ox + sx  , oy       )
 \end{code}
 
 \subsubsection*{Agrupar Caixas}
+
+Para agrupar as caixas numa |Fig| basta fazer um |collectLeafs|,
+um catamorfismo que recolhe todas as folhas, e depois mapear a função
+swap a todos os elementos do output.
+
 \begin{code}
 agrup_caixas :: X (Caixa,Origem) () -> Fig
 agrup_caixas = map swap . collectLeafs 
@@ -1236,6 +1247,22 @@ agrup_caixas = map swap . collectLeafs
 collectLeafs :: X a b -> [a]
 collectLeafs = cataL2D (either singl ((uncurry (++)).p2)) 
 \end{code}
+
+\begin{eqnarray*}
+\xymatrix@@C=4cm{
+    |X a b|
+           \ar[d]_-{|collectLeafs|}
+           \ar[r]_-{|outL2D|}
+&
+    |a + b >< (X a b >< X a b)|
+           \ar[d]^-{|id + id >< (collectLeafs >< collectLeafs)|}
+\\
+     |[a]|
+&
+     |a + b >< (a >< a)|
+           \ar[l]^-{|g = either singl ((uncurry (++)).p2|}
+}
+\end{eqnarray*}
 
 \subsubsection*{Mostrar Caixas}
 \begin{code}
