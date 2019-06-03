@@ -1185,6 +1185,7 @@ anaL2D g = inL2D . (recL2D (anaL2D g)) . g
 
 \subsubsection*{Dimensão}
 Para obter a dimensão de uma |L2D| aplicasse um catamorfismo.
+
 \begin{code}
 dimen :: L2D -> (Float, Float)
 dimen = cataL2D (either ((fromIntegral >< fromIntegral).p1) addH) 
@@ -1293,7 +1294,6 @@ Por fim, utilizasse a função pré-definida |display|.
 caixasAndOrigin2Pict :: (L2D, Origem) -> G.Picture
 caixasAndOrigin2Pict = G.Pictures . (map  figToPic) . agrup_caixas . calcOrigins
     where
-        figToPic :: (Origem, Caixa) -> G.Picture
         figToPic (o, ((sx, sy), (s, c))) = crCaixa o (fromIntegral sx) (fromIntegral sy) s c 
     
 mostra_caixas :: (L2D, Origem) -> IO()
@@ -1347,25 +1347,29 @@ hyloFS g h = cataFS g . anaFS h
 Outras funções pedidas:
 \begin{code}
 check :: (Eq a) => FS a b -> Bool
-check = undefined
+check = cataFS a
+        where a b = (length b == (length $ nub $ map (p1) $ b)) && ((length $ filter ((either (const True) id) . p2) b) == 0)
 
 tar :: FS a b -> [(Path a, b)]
-tar = undefined
+tar = cataFS x
+    where x = concatMap (\(a,b) -> either (\x -> [([a], x)]) (map (\(x,y) -> ((a:x), y))) b)
 
 untar :: (Eq a) => [(Path a, b)] -> FS a b
-untar = undefined
+untar = anaFS x
+    where x = map (\(a,(b,c)) -> if (null b) then (a, (Left c)) else (a, Right [(b,c)])) . map (\(a,b) -> (head a, (tail a, b)))
 
 find :: (Eq a) => a -> FS a b -> [Path a]
-find = undefined
+find o = cataFS f
+    where f = concatMap (\(a,b) -> if (a == o) then either (const [[a]]) (map ((:) a)) b else either (const []) (map((:) a)) b)
 
 new :: (Eq a) => Path a -> b -> FS a b -> FS a b
-new = undefined
+new a b c = untar ((a,b) : tar c)
 
 cp :: (Eq a) => Path a -> Path a -> FS a b -> FS a b
 cp = undefined
 
 rm :: (Eq a) => (Path a) -> (FS a b) -> FS a b
-rm = undefined
+rm a b = untar $ filter (not . (==) a . p1) $ tar b
 
 auxJoin :: ([(a, Either b c)],d) -> [(a, Either b (d,c))]
 auxJoin = undefined
