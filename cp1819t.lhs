@@ -1182,12 +1182,6 @@ cataL2D g = g . (recL2D(cataL2D g)) . outL2D
 
 anaL2D g = inL2D . (recL2D (anaL2D g)) . g
 
-collectLeafs :: (L2D, Origem) -> Either (Caixa, Origem) ((), ((L2D, Origem),(L2D, Origem)))
-collectLeafs ((Unid c), o)     = Left (c, o)
-collectLeafs ((Comp t l r), o) = Right ((), ((l, o), (r, ro)))
-    where
-        ro = calc t o $ dimen l
-
 dimen :: L2D -> (Float, Float)
 dimen = cataL2D g
     where
@@ -1206,26 +1200,24 @@ isVert _ = False
 calcOrigins :: (L2D, Origem) -> X (Caixa,Origem) ()
 calcOrigins = anaL2D collectLeafs
         
+collectLeafs :: (L2D, Origem) -> Either (Caixa, Origem) ((), ((L2D, Origem),(L2D, Origem)))
+collectLeafs ((Unid c), o)     = Left (c, o)
+collectLeafs ((Comp t l r), o) = Right ((), ((l, o), (r, calc t o $ dimen l)))
 
 calc :: Tipo -> Origem -> (Float, Float) -> Origem
 calc V  (ox, oy) (sx, sy) = (ox + sx/2, oy + sy  )
 calc Vd (ox, oy) (sx, sy) = (ox + oy  , oy + sy  ) --TODO
 calc Ve (ox, oy) (sx, sy) = (ox       , oy + sy  )
 calc H  (ox, oy) (sx, sy) = (ox + sx  , oy + sy/2)
-calc Ht (ox, oy) (sx, sy) = (ox + sx  , oy + sy   ) --TODO
+calc Ht (ox, oy) (sx, sy) = (ox + sx  , oy + sy  ) --TODO
 calc Hb (ox, oy) (sx, sy) = (ox + sx  , oy       )
 
 agrup_caixas :: X (Caixa,Origem) () -> Fig
-agrup_caixas = cataL2D g
-    where
-        g :: Either (Caixa, Origem) ((), (Fig, Fig)) -> Fig
-        g (Left  (c, o)) = [(o, c)]
-        g (Right (_ , (f1, f2))) = f1 ++ f2
+agrup_caixas = cataL2D (either (singl . swap)  (uncurry (++) . p2))  
 
 caixasAndOrigin2Pict :: (L2D, Origem) -> G.Picture
 caixasAndOrigin2Pict = G.Pictures . (map  figToPic) . agrup_caixas . calcOrigins
     where
-        figToPic :: (Origem, Caixa) -> G.Picture
         figToPic (o, ((sx, sy), (s, c))) = crCaixa o (fromIntegral sx) (fromIntegral sy) s c 
 
     
