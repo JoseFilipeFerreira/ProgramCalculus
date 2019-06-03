@@ -1185,7 +1185,6 @@ anaL2D g = inL2D . (recL2D (anaL2D g)) . g
 
 \subsubsection*{Dimensão}
 Para obter a dimensão de uma |L2D| aplicasse um catamorfismo.
-
 \begin{code}
 dimen :: L2D -> (Float, Float)
 dimen = cataL2D (either ((fromIntegral >< fromIntegral).p1) addH) 
@@ -1222,7 +1221,6 @@ isVert _ = False
 calcOrigins :: (L2D, Origem) -> X (Caixa,Origem) ()
 calcOrigins = anaL2D g
     where        
-        g :: (L2D, Origem) -> Either (Caixa, Origem) ((), ((L2D, Origem),(L2D, Origem)))
         g ((Unid c), o)     = Left (c, o)
         g ((Comp t l r), o) = Right ((), ((l, o), (r, calc t o $ dimen l)))
 
@@ -1348,7 +1346,7 @@ Outras funções pedidas:
 \begin{code}
 check :: (Eq a) => FS a b -> Bool
 check = cataFS a
-        where a b = (length b == (length $ nub $ map (p1) $ b)) && ((length $ filter ((either (const True) id) . p2) b) == 0)
+    where a b = (length b == (length $ nub $ map (p1) $ b)) && ((length $ filter ((either (const True) id) . p2) b) == 0)
 
 tar :: FS a b -> [(Path a, b)]
 tar = cataFS x
