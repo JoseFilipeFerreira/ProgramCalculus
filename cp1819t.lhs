@@ -1166,72 +1166,87 @@ stackBop (Op"*",(a,b)) = a ++ b ++ ["MUL"]
 \begin{code}
 inL2D :: Either a (b, (X a b,X a b)) -> X a b
 inL2D = either Unid comp
-
 comp :: (b, (X a b, X a b)) -> X a b
 comp (b, (l, r)) = Comp b l r
-
 outL2D :: X a b -> Either a (b, (X a b,X a b))
 outL2D (Unid a) = i1 a
 outL2D (Comp a f g) = i2 (a, (f,g))
-
 baseL2D f g h i = f -|- ( g >< (h >< i))
-
 recL2D f = baseL2D id id f f
-
 cataL2D g = g . (recL2D(cataL2D g)) . outL2D
-
 anaL2D g = inL2D . (recL2D (anaL2D g)) . g
+\end{code}
 
-collectLeafs :: (L2D, Origem) -> Either (Caixa, Origem) ((), ((L2D, Origem),(L2D, Origem)))
-collectLeafs ((Unid c), o)     = Left (c, o)
-collectLeafs ((Comp t l r), o) = Right ((), ((l, o), (r, ro)))
-    where
-        ro = calc t o $ dimen l
-
+\subsubsection*{Dimensão}
+Para obter a dimensão de uma |L2D| aplicasse um catamorfismo.
+\begin{code}
 dimen :: L2D -> (Float, Float)
-dimen = cataL2D g
+dimen = cataL2D (either ((fromIntegral >< fromIntegral).p1) addH) 
     where
-        g :: Either Caixa (Tipo, ((Float, Float), (Float, Float))) -> (Float, Float)
-        g (Left  (s, _)) = (fromIntegral >< fromIntegral) s
-        g (Right (t, ((x1, y1), (x2, y2)))) | isVert t  = (max x1 x2, y1 + y2)
-                                            | otherwise = (x1 + x2  , max y1 y2)
+        addH :: (Tipo, ((Float, Float), (Float, Float))) -> (Float, Float)
+        addH (t, ((x1, y1), (x2, y2))) | isVert t  = (max x1 x2, y1 + y2)
+                                       | otherwise = (x1 + x2  , max y1 y2)
 
 isVert :: Tipo -> Bool
 isVert V  = True
 isVert Ve = True
 isVert Vd = True
 isVert _ = False
+\end{code}
 
+\begin{eqnarray*}
+\xymatrix@@C=5cm{
+    |L2D|
+           \ar[d]_-{|dimen|}
+           \ar[r]_-{|outL2D|}
+&
+    |Caixa + Tipo >< (L2D >< L2D)|
+           \ar[d]^-{|id + id >< (dimen >< dimen)|}
+\\
+     |(Float, Float)|
+&
+     |Caixa + Tipo >< ((Float, Float) >< (Float, Float))|
+           \ar[l]^-{|g = either ((fromIntegral >< fromIntegral).p1) addH|}
+}
+\end{eqnarray*}
 
+\subsubsection*{Calcular Origens}
+\begin{code}
 calcOrigins :: (L2D, Origem) -> X (Caixa,Origem) ()
-calcOrigins = anaL2D collectLeafs
-        
+calcOrigins = anaL2D g
+    where        
+        g :: (L2D, Origem) -> Either (Caixa, Origem) ((), ((L2D, Origem),(L2D, Origem)))
+        g ((Unid c), o)     = Left (c, o)
+        g ((Comp t l r), o) = Right ((), ((l, o), (r, calc t o $ dimen l)))
 
 calc :: Tipo -> Origem -> (Float, Float) -> Origem
 calc V  (ox, oy) (sx, sy) = (ox + sx/2, oy + sy  )
-calc Vd (ox, oy) (sx, sy) = (ox + oy  , oy + sy  ) --TODO
+calc Vd (ox, oy) (sx, sy) = (ox + oy  , oy + sy  )
 calc Ve (ox, oy) (sx, sy) = (ox       , oy + sy  )
 calc H  (ox, oy) (sx, sy) = (ox + sx  , oy + sy/2)
-calc Ht (ox, oy) (sx, sy) = (ox + sx  , oy + sy   ) --TODO
+calc Ht (ox, oy) (sx, sy) = (ox + sx  , oy + sy  )
 calc Hb (ox, oy) (sx, sy) = (ox + sx  , oy       )
+\end{code}
 
+\subsubsection*{Agrupar Caixas}
+\begin{code}
 agrup_caixas :: X (Caixa,Origem) () -> Fig
-agrup_caixas = cataL2D g
-    where
-        g :: Either (Caixa, Origem) ((), (Fig, Fig)) -> Fig
-        g (Left  (c, o)) = [(o, c)]
-        g (Right (_ , (f1, f2))) = f1 ++ f2
+agrup_caixas = map swap . collectLeafs 
 
+collectLeafs :: X a b -> [a]
+collectLeafs = cataL2D (either singl ((uncurry (++)).p2)) 
+\end{code}
+
+\subsubsection*{Mostrar Caixas}
+\begin{code}
 caixasAndOrigin2Pict :: (L2D, Origem) -> G.Picture
 caixasAndOrigin2Pict = G.Pictures . (map  figToPic) . agrup_caixas . calcOrigins
     where
         figToPic :: (Origem, Caixa) -> G.Picture
         figToPic (o, ((sx, sy), (s, c))) = crCaixa o (fromIntegral sx) (fromIntegral sy) s c 
-
     
 mostra_caixas :: (L2D, Origem) -> IO()
 mostra_caixas = display . caixasAndOrigin2Pict
-
 \end{code}
 
 \subsection*{Problema 3}
