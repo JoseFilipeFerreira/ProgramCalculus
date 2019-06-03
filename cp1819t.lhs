@@ -85,7 +85,7 @@
 %format .&&&. = "\wedge"
 %format cdots = "\cdots "
 %format pi = "\pi "
-
+%format power2 = "^2"
 %---------------------------------------------------------------------------
 
 \title{
@@ -1207,11 +1207,11 @@ isVert _ = False
            \ar[r]_-{|outL2D|}
 &
     |Caixa + Tipo >< (L2D >< L2D)|
-           \ar[d]^-{|id + id >< (dimen >< dimen)|}
+           \ar[d]^-{|id + id >< dimen power2|}
 \\
      |(Float, Float)|
 &
-     |Caixa + Tipo >< ((Float, Float) >< (Float, Float))|
+     |Caixa + Tipo >< (Float, Float) power2|
            \ar[l]^-{|g = either ((fromIntegral >< fromIntegral).p1) addH|}
 }
 \end{eqnarray*}
@@ -1233,6 +1233,22 @@ calc H  (ox, oy) (sx, sy) = (ox + sx  , oy + sy/2)
 calc Ht (ox, oy) (sx, sy) = (ox + sx  , oy + sy  )
 calc Hb (ox, oy) (sx, sy) = (ox + sx  , oy       )
 \end{code}
+
+\begin{eqnarray*}
+\xymatrix@@C=3cm{
+    |L2D >< Origem|
+            \ar[d]_-{|calcOrigins = anaL2D g|}
+            \ar[r]^-{|g|}
+&
+    |(Caixa >< Origem) + Nil >< ((L2D >< Origem) power2)|
+            \ar[d]^-{|id + id >< (anaL2D g) power2|}
+\\
+    |X (Caixa >< Origem) Nil|
+&
+    |(Caixa >< Origem) + Nil >< (X (Caixa >< Origem) Nil) power2|
+            \ar[l]_-{|inL2D|}
+}
+\end{eqnarray*}
 
 \subsubsection*{Agrupar Caixas}
 
@@ -1265,6 +1281,14 @@ collectLeafs = cataL2D (either singl ((uncurry (++)).p2))
 \end{eqnarray*}
 
 \subsubsection*{Mostrar Caixas}
+
+Para criar a função |mostra_caixas| basta utilizar as funções definidas até agora.
+Primeiro calculasse as origens de cada caixa com a função |calcOrigins|.
+Depois criasse uma lista de |Fig| com  a função |agrup_caixas|.
+Em seguida, convertesse cada |Fig| para uma |G.Picture|, com recurso a uma função
+auxiliar que faz uso da |crCaixa|, e juntasse todas com recurso à função |G.Pictures|.
+Por fim, utilizasse a função pré-definida |display|.
+
 \begin{code}
 caixasAndOrigin2Pict :: (L2D, Origem) -> G.Picture
 caixasAndOrigin2Pict = G.Pictures . (map  figToPic) . agrup_caixas . calcOrigins
