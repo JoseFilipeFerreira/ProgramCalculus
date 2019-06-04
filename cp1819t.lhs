@@ -1190,14 +1190,15 @@ dimen :: L2D -> (Float, Float)
 dimen = cataL2D (either ((fromIntegral >< fromIntegral).p1) addH) 
     where
         addH :: (Tipo, ((Float, Float), (Float, Float))) -> (Float, Float)
-        addH (t, ((x1, y1), (x2, y2))) | isVert t  = (max x1 x2, y1 + y2)
-                                       | otherwise = (x1 + x2  , max y1 y2)
+        addH (V , ((x1, y1), (x2, y2))) = ( x1 + zeroer(x2 - x1/2), y1 + y2                )
+        addH (Vd, ((x1, y1), (x2, y2))) = ( x1 + x2               , y1 + y2                )
+        addH (Ve, ((x1, y1), (x2, y2))) = ( max x1 x2             , y1 + y2                )
+        addH (H , ((x1, y1), (x2, y2))) = ( x1 + x2               , y1 + zeroer(y2 - y1/2) )
+        addH (Ht, ((x1, y1), (x2, y2))) = ( x1 + x2               , y1 + y2                )
+        addH (Hb, ((x1, y1), (x2, y2))) = ( x1 + x2               , max y1 y2              )
+        zeroer x | x < 0 = 0
+                 | otherwise = x
 
-isVert :: Tipo -> Bool
-isVert V  = True
-isVert Ve = True
-isVert Vd = True
-isVert _ = False
 \end{code}
 
 \begin{eqnarray*}
