@@ -1185,20 +1185,20 @@ anaL2D g = inL2D . (recL2D (anaL2D g)) . g
 
 \subsubsection*{Dimensão}
 Para obter a dimensão de uma |L2D| aplicasse um catamorfismo.
-
 \begin{code}
 dimen :: L2D -> (Float, Float)
 dimen = cataL2D (either ((fromIntegral >< fromIntegral).p1) addH) 
     where
         addH :: (Tipo, ((Float, Float), (Float, Float))) -> (Float, Float)
-        addH (t, ((x1, y1), (x2, y2))) | isVert t  = (max x1 x2, y1 + y2)
-                                       | otherwise = (x1 + x2  , max y1 y2)
+        addH (V , ((x1, y1), (x2, y2))) = ( x1 + zeroer(x2 - x1/2), y1 + y2                )
+        addH (Vd, ((x1, y1), (x2, y2))) = ( x1 + x2               , y1 + y2                )
+        addH (Ve, ((x1, y1), (x2, y2))) = ( max x1 x2             , y1 + y2                )
+        addH (H , ((x1, y1), (x2, y2))) = ( x1 + x2               , y1 + zeroer(y2 - y1/2) )
+        addH (Ht, ((x1, y1), (x2, y2))) = ( x1 + x2               , y1 + y2                )
+        addH (Hb, ((x1, y1), (x2, y2))) = ( x1 + x2               , max y1 y2              )
+        zeroer x | x < 0 = 0
+                 | otherwise = x
 
-isVert :: Tipo -> Bool
-isVert V  = True
-isVert Ve = True
-isVert Vd = True
-isVert _ = False
 \end{code}
 
 \begin{eqnarray*}
@@ -1222,7 +1222,6 @@ isVert _ = False
 calcOrigins :: (L2D, Origem) -> X (Caixa,Origem) ()
 calcOrigins = anaL2D g
     where        
-        g :: (L2D, Origem) -> Either (Caixa, Origem) ((), ((L2D, Origem),(L2D, Origem)))
         g ((Unid c), o)     = Left (c, o)
         g ((Comp t l r), o) = Right ((), ((l, o), (r, calc t o $ dimen l)))
 
@@ -1348,7 +1347,7 @@ Outras funções pedidas:
 \begin{code}
 check :: (Eq a) => FS a b -> Bool
 check = cataFS a
-        where a b = (length b == (length $ nub $ map (p1) $ b)) && ((length $ filter ((either (const True) id) . p2) b) == 0)
+    where a b = (length b == (length $ nub $ map (p1) $ b)) && ((length $ filter ((either (const True) id) . p2) b) == 0)
 
 tar :: FS a b -> [(Path a, b)]
 tar = cataFS x
