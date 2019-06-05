@@ -1575,7 +1575,16 @@ new a b c = untar ((a,b) : tar c)
 \begin{code}
 
 cp :: (Eq a) => Path a -> Path a -> FS a b -> FS a b
-cp = undefined
+cp a e c = untar $ f $ tar c
+    where f x | null (g x) = x
+              | otherwise = (e,(p2 $ head $ g x)) : x
+          g lst = if (a == []) then [] else filter ((elem (head a)).fst) lst
+
+\end{code}
+
+\subsubsection*{Rm}
+
+\begin{code}
 
 \end{code}
 
