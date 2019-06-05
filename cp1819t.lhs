@@ -86,6 +86,9 @@
 %format cdots = "\cdots "
 %format pi = "\pi "
 %format power2 = "^2"
+%format (cataExpr (g)) = "\cata{" g "}"
+%format (cataFS (g)) = "\cata{" g "}"
+%format (anaL2D (g)) = "\ana{" g "}"
 %---------------------------------------------------------------------------
 
 \title{
@@ -1127,7 +1130,7 @@ outras funções auxiliares que sejam necessárias.
 \begin{code}
 
 inExpr :: Either Int (Op,(Expr,Expr)) -> Expr
-inExpr = either Num (uncurry(uncurry Bop) . (swap >< id) . assocl . id)
+inExpr = either Num (uncurry(uncurry Bop) . (swap >< id) . assocl)
 
 outExpr :: Expr -> Either Int (Op,(Expr,Expr))
 outExpr (Num a) = i1 a
@@ -1141,6 +1144,12 @@ anaExpr f = inExpr . (recExpr (anaExpr f)) . f
 
 hyloExpr a c = cataExpr a . anaExpr c
 
+\end{code}
+
+\subsubsection*{Calcula}
+
+\begin{code}
+
 calcula :: Expr -> Int
 calcula e = cataExpr (either id calcBop) e
 
@@ -1148,9 +1157,53 @@ calcBop (Op"+",(a,b)) = (+) a b
 calcBop (Op"-",(a,b)) = (-) a b
 calcBop (Op"*",(a,b)) = (*) a b
 
+\end{code}
+
+\begin{eqnarray*}
+\xymatrix@@C=5cm{
+    |Expr|
+           \ar[d]_-{|calcula|}
+           \ar[r]_-{|outExpr|}
+&
+    |Int + (Op >< (Expr >< Expr))|
+           \ar[d]^-{|id + id >< calcula power2|}
+\\
+     |Int|
+&
+     |Int + (Op >< (Int, Int))|
+           \ar[l]^-{|g = either id calcBop|}
+}
+\end{eqnarray*}
+
+\subsubsection*{Show}
+
+\begin{code}
+
 show' = cataExpr (either show showBop)
     where showBop (Op c,(a,b)) = "(" ++  a ++ " " ++ c ++ " " ++ b ++ ")"
  
+\end{code}
+
+\begin{eqnarray*}
+\xymatrix@@C=5cm{
+    |Expr|
+           \ar[d]_-{|show'|}
+           \ar[r]_-{|outExpr|}
+&
+    |Int + (Op >< (Expr >< Expr))|
+           \ar[d]^-{|id + id >< show' power2|}
+\\
+     |String|
+&
+     |Int + (Op >< (String, String))|
+           \ar[l]^-{|g = either show showBop|}
+}
+\end{eqnarray*}
+
+\subsubsection*{Compile}
+
+\begin{code}
+
 compile :: String -> Codigo
 compile = cataExpr (either pushN stackBop) . read
     where pushN x = (singl ("PUSH " ++ show x))
@@ -1160,6 +1213,26 @@ stackBop (Op"-",(a,b)) = a ++ b ++ ["SUB"]
 stackBop (Op"*",(a,b)) = a ++ b ++ ["MUL"]
 
 \end{code}
+
+\begin{eqnarray*}
+\xymatrix@@C=5cm{
+    |String|
+           \ar[d]_-{read}
+&
+\\
+    |Expr|
+           \ar[d]_-{|cataExpr g|}
+           \ar[r]_-{|outExpr|}
+&
+    |Int + (Op >< (Expr >< Expr))|
+           \ar[d]^-{|id + id >< (cataExpr g) power2|}
+\\
+     |Codigo|
+&
+     |Int + (Op >< (Codigo, Codigo))|
+           \ar[l]^-{|g = either pushN stackBop|}
+}
+\end{eqnarray*}
 
 \subsection*{Problema 2}
 
@@ -1207,7 +1280,7 @@ dimen = cataL2D (either ((fromIntegral >< fromIntegral).p1) addH)
            \ar[d]_-{|dimen|}
            \ar[r]_-{|outL2D|}
 &
-    |Caixa + Tipo >< (L2D >< L2D)|
+    |Caixa + Tipo >< L2D power2|
            \ar[d]^-{|id + id >< dimen power2|}
 \\
      |(Float, Float)|
@@ -1308,6 +1381,47 @@ cos' x = prj . for loop init where
    prj (e,h,s,g) = e
 \end{code}
 
+\begin{eqnarray*}
+	cos\ x = \sum_{i=0}^\infty \frac{(-1)^i}{(2i)!} x^{2i}
+\end{eqnarray*}
+
+Seja $e\ x\ n = \sum_{i=0}^{n} \frac {(-1)^i}{(2i)!} x^{2i}$ a função que dá essa aproximação.
+Podemos ver que |e x 0 = 1| e que $|e x (n+1)| = |e x n| + \frac {(-1)^{n+1}} {(2(n+1))!} x^{2(n+1)}$.
+Se definirmos $|h x n| = \frac {(-1)^n+1} {(2(n+1))!} x^{2(n+1)}$ teremos |e x| e |h x| em recursividade
+mútua. Repetindo o processo para |h x n| etc obteremos:
+\begin{spec}
+e x 0 = 1
+e x (n+1) = h x n + e x n
+
+h x 0 = -(x^2)/2
+h x (n+1) = (x^2) / (s * g) * h x n
+
+s 0 = 4
+s (n+1) = 2 + s n
+
+g 0 = 3
+g (n+1) = 2 + g n
+\end{spec}
+
+\subsubsection*{Valorização}
+
+\begin{spec}
+float cos (float x , int n) {
+	float e = 1;
+	float h = -(x * x)/2;
+	float s = 4;
+	float g = 3;
+	float i;
+	for(i = 1; i <= n; i++) {
+		e = e + h;
+		h = (-(x * x) / (s * g))* h;
+		s += 2;
+		g += 2;
+	}
+	return e;
+}
+\end{spec}
+
 \subsection*{Problema 4}
 Triologia ``ana-cata-hilo":
 \begin{code}
@@ -1326,52 +1440,166 @@ anaFS g = inFS . (recFS (anaFS g)) . g
 hyloFS g h = cataFS g . anaFS h
 \end{code}
 
---meter tipos direitos
 \begin{eqnarray*}
 \xymatrix@@C=2cm{
-    |Nat0|
+    |FS A B|
            \ar[d]_-{|cataFS g|}
+           \ar[r]_-{|outFS|}
 &
-    |1 + Nat0|
-           \ar[d]^{|id x (id + (cataFS g))|}
-           \ar[l]_-{|inFS|}
+    |A >< (B + FS A B)|
+           \ar[d]^{|id >< (id + (cataFS g))|}
 \\
-     |B|
+     |C|
 &
-     |1 + B|
+     |A >< (B + C)|
            \ar[l]^-{|g|}
 }
 \end{eqnarray*}
 
 Outras funções pedidas:
+
+\subsubsection*{Check}
+
 \begin{code}
 check :: (Eq a) => FS a b -> Bool
 check = cataFS a
     where a b = (length b == (length $ nub $ map (p1) $ b)) && ((length $ filter ((either (const True) id) . p2) b) == 0)
 
+\end{code}
+
+\begin{eqnarray*}
+\xymatrix@@C=2cm{
+    |FS A B|
+           \ar[d]_-{|check|}
+           \ar[r]_-{|outFS|}
+&
+    |A >< (B + FS A B)|
+           \ar[d]^{|id >< (id + check|}
+\\
+     |C|
+&
+     |A >< (B + C)|
+           \ar[l]^-{|a|}
+}
+\end{eqnarray*}
+
+\subsubsection*{Tar}
+
+\begin{code}
+
 tar :: FS a b -> [(Path a, b)]
 tar = cataFS x
     where x = concatMap (\(a,b) -> either (\x -> [([a], x)]) (map (\(x,y) -> ((a:x), y))) b)
+
+\end{code}
+
+\begin{eqnarray*}
+\xymatrix@@C=2cm{
+    |FS A B|
+           \ar[d]_-{|tar|}
+           \ar[r]_-{|outFS|}
+&
+    |A >< (B + FS A B)|
+           \ar[d]^{|id >< (id + tar|}
+\\
+     |C|
+&
+     |A >< (B + C)|
+           \ar[l]^-{|x|}
+}
+\end{eqnarray*}
+
+\subsubsection*{Untar}
+
+\begin{code}
 
 untar :: (Eq a) => [(Path a, b)] -> FS a b
 untar = anaFS x
     where x = map (\(a,(b,c)) -> if (null b) then (a, (Left c)) else (a, Right [(b,c)])) . map (\(a,b) -> (head a, (tail a, b)))
 
+\end{code}
+
+\begin{eqnarray*}
+\xymatrix@@C=2cm{
+    |FS A B|
+&
+    |A >< (B + FS A B)|
+           \ar[l]_-{|inFS|}
+\\
+     |C|
+           \ar[u]_-{|untar|}
+           \ar[r]^-{|x|}
+&
+     |A >< (B + C)|
+           \ar[u]^{|id >< (id + untar)|}
+}
+\end{eqnarray*}
+
+\subsubsection*{Find}
+
+\begin{code}
+
 find :: (Eq a) => a -> FS a b -> [Path a]
 find o = cataFS f
     where f = concatMap (\(a,b) -> if (a == o) then either (const [[a]]) (map ((:) a)) b else either (const []) (map((:) a)) b)
 
+\end{code}
+
+\begin{eqnarray*}
+\xymatrix@@C=2cm{
+    |FS A B|
+           \ar[d]_-{|find|}
+           \ar[r]_-{|outFS|}
+&
+    |A >< (B + FS A B)|
+           \ar[d]^{|id >< (id + find|}
+\\
+     |C|
+&
+     |A >< (B + C)|
+           \ar[l]^-{|f|}
+}
+\end{eqnarray*}
+
+\subsubsection*{New}
+
+\begin{code}
+
 new :: (Eq a) => Path a -> b -> FS a b -> FS a b
 new a b c = untar ((a,b) : tar c)
+
+\end{code}
+
+\subsubsection*{Cp}
+
+\begin{code}
 
 cp :: (Eq a) => Path a -> Path a -> FS a b -> FS a b
 cp = undefined
 
+\end{code}
+
+\subsubsection*{Rm}
+
+\begin{code}
+
 rm :: (Eq a) => (Path a) -> (FS a b) -> FS a b
 rm a b = untar $ filter (not . (==) a . p1) $ tar b
 
+\end{code}
+
+\subsubsection*{auxJoin}
+
+\begin{code}
+
 auxJoin :: ([(a, Either b c)],d) -> [(a, Either b (d,c))]
 auxJoin = undefined
+
+\end{code}
+
+\subsubsection*{cFS2Exp}
+
+\begin{code}
 
 cFS2Exp :: a -> FS a b -> (Exp () a)
 cFS2Exp = undefined
