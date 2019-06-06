@@ -116,7 +116,7 @@
 
 \begin{center}\large
 \begin{tabular}{ll}
-\textbf{Grupo} nr. & 10 (preencher)
+\textbf{Grupo} nr. & 10
 \\\hline
 a85504 & João Teixeira	
 \\
@@ -1579,12 +1579,6 @@ cp a e c = untar $ f $ tar c
     where f x | null (g x) = x
               | otherwise = (e,(p2 $ head $ g x)) : x
           g lst = if (a == []) then [] else filter ((elem (head a)).fst) lst
-
-\end{code}
-
-\subsubsection*{Rm}
-
-\begin{code}
 
 \end{code}
 
