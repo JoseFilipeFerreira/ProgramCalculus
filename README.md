@@ -1,5 +1,5 @@
 # CP-1819
-CP Assignment
+Program Calculus Assignment
 
 ## Setting up
 
