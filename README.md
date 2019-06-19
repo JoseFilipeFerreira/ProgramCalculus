@@ -1,4 +1,4 @@
-# CP-1819
+# CP-Project
 Program Calculus Assignment
 
 ## Setting up
